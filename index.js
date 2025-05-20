@@ -2,8 +2,12 @@ const express = require("express");
 const app = express();
 const port = 3000;
 
+let userRoutes = require('./routes/users')
+
 // its a middileware for read the json data
 app.use(express.json());
+app.use("/api/users", userRoutes);
+
 
 // Main default route of the application
 // app.get('/', (req, res) => {
@@ -55,71 +59,106 @@ app.use(express.json());
 //     })
 // })
 
-let users = [];
-let userId = 1;
+// const testMiddleWare = (req, res, next) => {
+//   console.log("Middleware 1 execute");
+//   next();
+// };
+// const testMiddleWare2 = (req, res, next) => {
+//   console.log("Middleware 2 executed");
+//   next();
+// };
 
-app.post("/api/users", function (req, res) {
-  console.log("Users id is: ", req.params.id);
-  let user = {
-    id: userId++,
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-  };
-  users.push(user);
-  res.status(200).send(user);
-});
-
-app.get('/api/users', function(req, res) {
-    console.log('All users data is ', users);
-    res.json(users)
-})
-
-app.get("/api/users/:id", function (req, res) {
-  let userId = Number(req.params.id)
-
-  const user = users.find((user) => user.id === userId);
-
-  if (user) {
-    res.status(200).send(user);
-  } else {
-    res.send(404).send({ message: "User is not found here" });
-  }
-});
-
-// app.delete('/api/users/:id', function(req, res){
-//     let userId = Number(req.params.id)
-//     let desiredUser = users.find((usr) => usr.id === userId)
-//     let user = users.filter(usr => usr.id !== userId)
-//     users = [...user]
-//     if (desiredUser) {
-//         res.json(user)
-//     } else {
-//         res.status(404).send({message: 'Delete request cannot be successfull because no users found'})
+// const checkUsersId =
+//   ("/api/users/:id",
+//   (req, res, next) => {
+//     if (req.params.id !== null) {
+//       console.log("user id is ", userId);
+//       console.log("id found here and middleware successfully calls here");
+//       next();
 //     }
+//     res.end();
+//   });
 
-// })
+// const checkTheUserLoggedIn = (req, res, next) => {
+//   const isLogin = false;
+//   console.log("Original url is: ", req.originalUrl);
+//   if (isLogin) {
+//     console.log("Original url is: ", req.originalUrl);
+//     next();
+//   } else {
+//     res
+//       .status(404)
+//       .send({ message: "Your are not logged in kindly login first" });
+//   }
+// };
 
-// delete method optimized version code
+// app.use([testMiddleWare, testMiddleWare2, checkUsersId, checkTheUserLoggedIn]);
 
-app.delete('/api/users/:id', function(req, res){
-    let userId = req.params.id;
-    let index = users.findIndex(usr => usr.id === userId);
+// app.get("/api/dashboard", (req, res) => {
+//   res.send("This is Dashboard page loaded here...!!");
+// });
 
-    if (index !==-1) {
-        let user = users.filter(usr => usr.id !== userId)
-        res.status(200).send(user)
-    } else {
-        res.status(404).send({
-            message: 'Sorry delete request cannot be successfull because no any user found here...!!'
-        })
-    }
+// let users = [];
+// let userId = 1;
 
-})
+// app.post("/api/users", function (req, res) {
+//   let user = {
+//     id: userId++,
+//     name: req.body.name,
+//     email: req.body.email,
+//     password: req.body.password,
+//   };
+//   users.push(user);
+//   res.status(200).send(user);
+// });
+
+// app.get("/api/users", function (req, res) {
+//   console.log("All users data is ", users);
+//   res.json(users);
+// });
+
+// app.get("/api/users/:id", function (req, res) {
+//   let userId = Number(req.params.id);
+//   const user = users.find((user) => user.id === userId);
+//   if (user) {
+//     res.status(200).send(user);
+//   } else {
+//     res.send(404).send({ message: "User is not found here" });
+//   }
+// });
+
+// // app.delete('/api/users/:id', function(req, res){
+// //     let userId = Number(req.params.id)
+// //     let desiredUser = users.find((usr) => usr.id === userId)
+// //     let user = users.filter(usr => usr.id !== userId)
+// //     users = [...user]
+// //     if (desiredUser) {
+// //         res.json(user)
+// //     } else {
+// //         res.status(404).send({message: 'Delete request cannot be successfull because no users found'})
+// //     }
+// // })
+// // delete method optimized version code
+
+// app.delete("/api/users/:id", function (req, res) {
+//   let userId = Number(req.params.id);
+//   let index = users.findIndex((usr) => usr.id === userId);
+//   console.log("index is", index);
+//   if (index !== -1) {
+//     console.log("users are", users);
+//     users.splice(index, 1);
+//     // let user = users.filter((usr) => usr.id !== userId);
+//     res.status(200).send(users);
+//   } else {
+//     res.status(404).send({
+//       message:
+//         "Sorry delete request cannot be successfull because no any user found here...!!",
+//     });
+//   }
+// });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
-
 
 // https://gitimmersion.com/lab_01.html
