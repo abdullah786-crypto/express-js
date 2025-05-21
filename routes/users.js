@@ -86,9 +86,7 @@ router.get('/:id', (req, res) => {
       return res.status(400).json({ message: 'User id is requires' });
     } else if (result.length === 0) {
       return res.status(404).json({ message: 'No user found' });
-    } else if (typeof userId === String) {
-      return res.status(400).json({ message: 'Invalid user id' });
-    } else {
+    }  else {
       const filteredUser = result.find((usr) => usr.id === userId);
       res.status(200).json(filteredUser);
     }
