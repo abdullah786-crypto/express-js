@@ -19,6 +19,12 @@ connection.connect((err) => {
 
 module.exports = connection;
 
+// Only one object 
+// 404 if user not exist
+// convertion into type script
+// use class validator for validation updating and creation methods
+
+
 
 // SQL datatypes
 
