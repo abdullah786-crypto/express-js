@@ -23,6 +23,8 @@ router.get('/', (req: any, res: any) => {
 router.post('/', (req: any, res: any) => {
   const { name, email, password, address, city, phone } = req.body;
 
+  
+
   let tableQuery = `CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(200),
