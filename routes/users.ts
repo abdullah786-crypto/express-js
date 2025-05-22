@@ -1,9 +1,22 @@
+import UserDto from "../Classes/user.dto";
+import {
+  validate,
+  validateOrReject
+} from 'class-validator';
+
 const express = require('express');
 const db = require('../database/db');
 let router = express.Router();
-
-// let users = [];
-// let userId = 1;
+const userDto = new UserDto();
+let tableQuery = `CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200),
+  email VARCHAR(300),
+  password VARCHAR(150),
+  address VARCHAR(500),
+  city VARCHAR(150),
+  phone VARCHAR(250)
+  )`;
 
 router.get('/', (req: any, res: any) => {
   let query = `SELECT * FROM users`;
@@ -21,45 +34,48 @@ router.get('/', (req: any, res: any) => {
 });
 
 router.post('/', (req: any, res: any) => {
+  let insertQuery = `INSERT INTO users (name, email, password, address, city, phone) VALUES (?, ?, ?, ?, ?, ?)`;
   const { name, email, password, address, city, phone } = req.body;
 
-  
+  userDto.name = name;
+  userDto.email = email;
+  userDto.password = password;
+  userDto.address = address;
+  userDto.city = city;
+  userDto.phone = phone;
 
-  let tableQuery = `CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(200),
-  email VARCHAR(300),
-  password VARCHAR(150),
-  address VARCHAR(500),
-  city VARCHAR(150),
-  phone VARCHAR(250)
-  )`;
-
-  db.query(tableQuery, (err: any) => {
-    if (err) {
-      res.status(500).json({ message: 'Table creation failed' });
-    }
-  });
-
-  let insertQuery = `INSERT INTO users (name, email, password, address, city, phone) VALUES (?, ?, ?, ?, ?, ?)`;
-  let fields = [name, email, password, address, city, phone];
-
-  db.query(insertQuery, fields, (err: any, result: any) => {
-    if (err) {
-      console.log('Error is', err);
-      return res.status(500).json({ message: 'Insert data failed' });
+  validate(userDto).then((error: any) => {
+    if (error.length > 0) {
+      console.log('errors are', error)
+      const messages = error.map((err: any) => ({
+        property: err.property,
+        error: Object.values(err.constraints || {})
+      }))
+      res.status(400).json({ message: 'Validation failed', errors: messages })
     } else {
-      res.status(200).json({
-        id: result.insertId,
-        name: name,
-        email: email,
-        password: password,
-        address: address,
-        city: city,
-        phone: phone,
+      db.query(tableQuery, (err: any) => {
+        if (err) {
+          res.status(500).json({ message: 'Table creation failed' });
+        }
       });
+      let fields = [name, email, password, address, city, phone];
+
+      db.query(insertQuery, fields, (err: any, result: any) => {
+        if (err) {
+          console.log('Error is', err);
+          return res.status(500).json({ message: 'Insert data failed' });
+        } else {
+          res.status(200).json({
+            message: 'User added successfull',
+            data: { id: result.insertId, ...req.body }
+          });
+        }
+      });
+      // res.status(200).json({message: 'Validation successful', data: {...req.body}})
     }
-  });
+  })
+
+
 
   // let user = {
   //   id: userId++,
@@ -76,7 +92,7 @@ router.post('/', (req: any, res: any) => {
   // res.status(200).send(user);
 });
 
-router.get('/:id', (req: any, res: any) => {
+router.get('/userId=:id', (req: any, res: any) => {
   let userId = Number(req.params.id);
 
   let query = 'SELECT * FROM users WHERE id = ?';
@@ -102,11 +118,10 @@ router.get('/:id', (req: any, res: any) => {
   // }
 });
 
-router.delete('/:id', (req: any, res: any) => {
+router.delete('/userId=:id', (req: any, res: any) => {
   let userId = Number(req.params.id);
   let allUserQuery = 'SELECT * FROM users';
   let query = 'DELETE FROM users WHERE id = ?';
-  let allUsers;
   db.query(allUserQuery, (err: any, result1: any) => {
     console.log('all usr 1', result1);
 
@@ -143,39 +158,59 @@ router.delete('/:id', (req: any, res: any) => {
   // }
 });
 
-router.put('/:id', (req: any, res: any) => {
-  let currentUserId = Number(req.params.id);
+router.put('/userId=:id', (req: any, res: any) => {
+  const allUsersQuery = 'SELECT * FROM users';
+  const updateQuery =
+    'UPDATE users SET name = ?, email = ?, password = ?, address = ?, city = ?, phone = ? WHERE id = ? ';
+  const currentUserId = Number(req.params.id);
 
   const { name, email, password, address, city, phone } = req.body;
-  const allUsersQuery = 'SELECT * FROM users';
-  let updateQuery =
-    'UPDATE users SET name = ?, email = ?, password = ?, address = ?, city = ?, phone = ? WHERE id = ? ';
-  if (!name || !email || !password || !address || !city || !phone) {
-    return res.status(400).json({ message: 'Please input all fields' });
-  } else if (isNaN(currentUserId)) {
-    return res.status(405).json({ message: 'Please enter user id' });
-  } else {
-    db.query(allUsersQuery, (err: any, result1: any[]) => {
-      if (result1) {
-        let index = result1.findIndex((x: any) => x.id === currentUserId)
-        if (index === -1) {
-          res.json({ message: 'No any user found' })
-        } else {
-          db.query(
-            updateQuery,
-            [name, email, password, address, city, phone, currentUserId],
-            (err: any, result: any) => {
-              if (err) {
-                return res.status(500).json({ message: err.message });
-              } else {
-                return res.status(200).json({ message: 'User updated successfully' });
-              }
-            },
-          );
-        }
+  userDto.name = name;
+  userDto.email = email;
+  userDto.password = password;
+  userDto.address = address;
+  userDto.city = city;
+  userDto.phone = phone;
+
+  validate(userDto).then((errors: any) => {
+    if (errors.length > 0) {
+      const messages = errors.map((err: any) => ({
+        property: err.property,
+        error : Object.values(err.constraints || {})
+      }))
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: messages
+      })
+      // console.log('errors messages', messages)
+    } else {
+      if (!currentUserId || currentUserId === undefined || currentUserId === null) {
+        return res.status(405).json({ message: 'Please enter user id' });
+      } else {
+        db.query(allUsersQuery, (err: any, result1: any[]) => {
+          if (result1) {
+            let index = result1.findIndex((x: any) => x.id === currentUserId)
+            if (index === -1) {
+              res.json({ message: 'No any user found' })
+            } else {
+              db.query(
+                updateQuery,
+                [name, email, password, address, city, phone, currentUserId],
+                (err: any, result: any) => {
+                  if (err) {
+                    return res.status(500).json({ message: err.message });
+                  } else {
+                    return res.status(200).json({ message: 'User updated successfully', data: {...req.body} });
+                  }
+                },
+              );
+            }
+          }
+        })
       }
-    })
-  }
+    }
+  })
+
 
   // users = users.filter((usr) => usr.id !== currentUser);
 
